@@ -24,6 +24,7 @@ LOGGING = {
             'class': 'logging.FileHandler',
             'filename': LOG_FILE_PATH,
             'formatter': 'default',
+            'encoding': 'utf-8',  # Указание кодировки UTF-8 для лог-файла
         },
     },
     'loggers': {

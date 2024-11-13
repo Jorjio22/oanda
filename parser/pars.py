@@ -3,10 +3,9 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 import time
-from datetime import datetime
-import pytz
+from django.utils import timezone
 import re
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from django.db import transaction
 import logging
 
@@ -18,7 +17,6 @@ logger = logging.getLogger('parser')
 class TradingParser:
     def __init__(self):
         global driver
-        self.kiev_tz = pytz.timezone('Europe/Kiev')
         # Проверка на существование драйвера
         if driver is None:
             driver = self.get_driver()
@@ -44,15 +42,24 @@ class TradingParser:
 
     # Метод для проверки необходимости запуска парсера
     def should_run_parser(self):
-        now_kiev = datetime.now(self.kiev_tz)
+        now_kiev = timezone.now()
         return now_kiev.weekday() < 5 and 8 <= now_kiev.hour < 24
 
     # Метод для получения обменного курса
     def exchange_rate_scrap(self):
-        timestamp = datetime.now()
+        timestamp = timezone.now()
         formatted_timestamp = timestamp.strftime("%Y-%m-%d %H:%M:%S")
-        exchange_rate = self.driver.find_element("xpath", "//span[@class='last-JWoJqCpY js-symbol-last']").text
-        exchange_rate = Decimal(exchange_rate.replace(',', '.'))
+
+        # Получаем текст обменного курса с сайта
+        exchange_rate_text = self.driver.find_element("xpath", "//span[@class='last-JWoJqCpY js-symbol-last']").text
+
+        # Пробуем преобразовать значение в Decimal, обрабатывая исключения
+        try:
+            exchange_rate = Decimal(exchange_rate_text.replace(',', '.'))
+        except (InvalidOperation, ValueError) as e:
+            logger.error(f"Не удалось преобразовать обменный курс в Decimal: {exchange_rate_text}, ошибка: {e}")
+            return None
+
         return [exchange_rate, formatted_timestamp]
 
     # Метод для получения объема продаж
@@ -63,18 +70,18 @@ class TradingParser:
 
     # Метод для получения уникальных значений курса
     def unique_course_value(self):
-        logger.info(f"Start of information collection: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+        logger.info(f"Start of information collection: {timezone.now().strftime('%Y-%m-%d %H:%M')}")
         candles_data = []
         volume_start = self.sales_volume_scrap()
-        end_time = datetime.now().replace(second=59, microsecond=999999)
+        end_time = timezone.now().replace(second=59, microsecond=999999)
 
-        while datetime.now() < end_time:
+        while timezone.now() < end_time:
             one_second = self.exchange_rate_scrap()
             if not candles_data or candles_data[-1][0] != one_second[0]:
                 candles_data.append(one_second)
             time.sleep(0.5)
 
-        logger.info(f"Stop of information collection: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+        logger.info(f"Stop of information collection: {timezone.now().strftime('%Y-%m-%d %H:%M')}")
         volume_stop = self.sales_volume_scrap()
         return candles_data, volume_start, volume_stop
 
@@ -140,7 +147,7 @@ class TradingParser:
                     logger.info(f"Ошибка при парсинге: {e}")
             else:
                 logger.info(
-                    f"{datetime.now().strftime('%Y-%m-%d %H:%M')} - Парсер не работает. Ожидание начала работы."
+                    f"{timezone.now().strftime('%Y-%m-%d %H:%M')} - Парсер не работает. Ожидание начала работы."
                 )
                 time.sleep(60)  # Ожидаем 1 минут перед следующей проверкой
 
