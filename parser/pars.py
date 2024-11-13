@@ -8,9 +8,11 @@ import pytz
 import re
 from decimal import Decimal
 from django.db import transaction
+import logging
 
 
 driver = None
+logger = logging.getLogger('parser')
 
 
 class TradingParser:
@@ -61,7 +63,7 @@ class TradingParser:
 
     # Метод для получения уникальных значений курса
     def unique_course_value(self):
-        print(f"Start: {datetime.now()}")
+        logger.info(f"Start of information collection: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
         candles_data = []
         volume_start = self.sales_volume_scrap()
         end_time = datetime.now().replace(second=59, microsecond=999999)
@@ -72,7 +74,7 @@ class TradingParser:
                 candles_data.append(one_second)
             time.sleep(0.5)
 
-        print(f"Stop: {datetime.now()}")
+        logger.info(f"Stop of information collection: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
         volume_stop = self.sales_volume_scrap()
         return candles_data, volume_start, volume_stop
 
@@ -81,7 +83,6 @@ class TradingParser:
         from .models import Candle  # Импортируем модель здесь, чтобы избежать ошибки
         candle_param = {}
         if candles_data:
-            print(f"candles_data[0] = {candles_data[0]}")
             candle_param["open_price"] = candles_data[0][0][0]
             candle_param["high_price"] = max(Decimal(candle[0]) for candle in candles_data[0])
             candle_param["low_price"] = min(Decimal(candle[0]) for candle in candles_data[0])
@@ -101,7 +102,6 @@ class TradingParser:
 
             seconds = [int(candle[1][-2:]) for candle in candles_data[0]]
             delays = [Decimal(seconds[i + 1]) - Decimal(seconds[i]) for i in range(len(seconds) - 1)]
-            print(f"delays: {delays}")
             candle_param["max_delay"] = max(delays) if delays else Decimal(0)
             candle_param["min_delay"] = min(delays) if delays else Decimal(0)
             candle_param["average_delay"] = sum(delays) / len(delays) if delays else Decimal(0)
@@ -116,14 +116,20 @@ class TradingParser:
             )
             candle_param["volume_average_per_minute"] = candle_param["volume_delta"] / Decimal(60)
 
+            logger.info(f"Open price: {candle_param['open_price']}")
+            logger.info(f"Close price: {candle_param['close_price']}")
+            logger.info(f"High price: {candle_param['high_price']}")
+            logger.info(f"Low price: {candle_param['low_price']}")
+            logger.info(f"Average price: {candle_param['average_value']}")
+
             try:
                 Candle.objects.create(**candle_param)
             except Exception as e:
-                print(f"Ошибка при записи в базу данных: {e}")
+                logger.info(f"Ошибка при записи в базу данных: {e}")
 
     # Основной метод для запуска парсера
     def run_parser(self):
-        print("Starting TradingParser...")
+        logger.info("########## Starting TradingParser ##########")
         while True:
             if self.should_run_parser():
                 try:
@@ -131,9 +137,11 @@ class TradingParser:
                         candles_data = self.unique_course_value()
                         self.candle_formation(candles_data)
                 except Exception as e:
-                    print(f"Ошибка при парсинге: {e}")
+                    logger.info(f"Ошибка при парсинге: {e}")
             else:
-                print("Парсер не работает. Ожидание начала работы.")
+                logger.info(
+                    f"{datetime.now().strftime('%Y-%m-%d %H:%M')} - Парсер не работает. Ожидание начала работы."
+                )
                 time.sleep(60)  # Ожидаем 1 минут перед следующей проверкой
 
 
