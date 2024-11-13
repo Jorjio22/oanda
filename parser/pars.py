@@ -42,7 +42,7 @@ class TradingParser:
 
     # Метод для проверки необходимости запуска парсера
     def should_run_parser(self):
-        now_kiev = timezone.now()
+        now_kiev = timezone.localtime(timezone.now())
         return now_kiev.weekday() < 5 and 8 <= now_kiev.hour < 24
 
     # Метод для получения обменного курса
