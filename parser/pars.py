@@ -47,7 +47,7 @@ class TradingParser:
 
     # Метод для получения обменного курса
     def exchange_rate_scrap(self):
-        timestamp = timezone.now()
+        timestamp = timezone.localtime()
         formatted_timestamp = timestamp.strftime("%Y-%m-%d %H:%M:%S")
 
         # Получаем текст обменного курса с сайта
@@ -70,18 +70,18 @@ class TradingParser:
 
     # Метод для получения уникальных значений курса
     def unique_course_value(self):
-        logger.info(f"Start of information collection: {timezone.now().strftime('%Y-%m-%d %H:%M')}")
+        logger.info(f"Start of information collection: {timezone.localtime().strftime('%Y-%m-%d %H:%M')}")
         candles_data = []
         volume_start = self.sales_volume_scrap()
-        end_time = timezone.now().replace(second=59, microsecond=999999)
+        end_time = timezone.localtime().replace(second=59, microsecond=999999)
 
-        while timezone.now() < end_time:
+        while timezone.localtime() < end_time:
             one_second = self.exchange_rate_scrap()
             if not candles_data or candles_data[-1][0] != one_second[0]:
                 candles_data.append(one_second)
             time.sleep(0.5)
 
-        logger.info(f"Stop of information collection: {timezone.now().strftime('%Y-%m-%d %H:%M')}")
+        logger.info(f"Stop of information collection: {timezone.localtime().strftime('%Y-%m-%d %H:%M')}")
         volume_stop = self.sales_volume_scrap()
         return candles_data, volume_start, volume_stop
 
@@ -147,7 +147,7 @@ class TradingParser:
                     logger.info(f"Ошибка при парсинге: {e}")
             else:
                 logger.info(
-                    f"{timezone.now().strftime('%Y-%m-%d %H:%M')} - Парсер не работает. Ожидание начала работы."
+                    f"{timezone.localtime().strftime('%Y-%m-%d %H:%M')} - Парсер не работает. Ожидание начала работы."
                 )
                 time.sleep(60)  # Ожидаем 1 минут перед следующей проверкой
 
