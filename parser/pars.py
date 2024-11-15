@@ -22,7 +22,7 @@ class TradingParser:
             driver = self.get_driver()
         self.driver = driver
 
-    # Метод для инициализации драйвера123
+    # Метод для инициализации драйвера
     def get_driver(self):
         options = Options()
         options.add_argument("--window-size=1920,1680")
