@@ -10,8 +10,8 @@ logger = logging.getLogger('parser')
 
 class ParserConfig(AppConfig):
     name = 'parser'
-    # lock_file = 'D:/OANDA_TREADING/parser_thread.lock'
-    lock_file = '/tmp/parser_thread.lock'
+    lock_file = 'D:/OANDA_TREADING/parser_thread.lock'
+    # lock_file = '/tmp/parser_thread.lock'
 
     def ready(self):
         # Подключаем обработчик сигнала завершения

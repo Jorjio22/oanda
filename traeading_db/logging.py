@@ -15,27 +15,27 @@ LOGGING = {
     },
     'handlers': {
         'console': {
-            'level': 'INFO',
+            'level': 'ERROR',  # Меняем уровень на ERROR
             'class': 'logging.StreamHandler',
             'formatter': 'default',
         },
         'file': {
-            'level': 'INFO',
+            'level': 'ERROR',  # Меняем уровень на ERROR
             'class': 'logging.FileHandler',
             'filename': LOG_FILE_PATH,
             'formatter': 'default',
-            'encoding': 'utf-8',  # Указание кодировки UTF-8 для лог-файла
+            'encoding': 'utf-8',
         },
     },
     'loggers': {
         '': {  # root logger
             'handlers': ['console', 'file'],
-            'level': 'INFO',
+            'level': 'ERROR',  # Меняем уровень на ERROR
             'propagate': True,
         },
         'parser': {  # Логгер для парсера
             'handlers': ['file'],
-            'level': 'INFO',
+            'level': 'ERROR',  # Меняем уровень на ERROR
             'propagate': False,
         },
     },
